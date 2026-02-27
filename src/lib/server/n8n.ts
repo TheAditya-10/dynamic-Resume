@@ -15,9 +15,43 @@ function summarizeError(error: unknown): string {
   return "Unknown error"
 }
 
-function unwrapN8nPayload(input: unknown): unknown {
+function safeSnippet(value: unknown, maxLength = 2000): string {
+  try {
+    const text = JSON.stringify(value)
+    return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text
+  } catch {
+    return "[unserializable payload]"
+  }
+}
+
+function hasJobMatchShape(value: unknown): boolean {
+  const object = asObject(value)
+  return object.originalScore !== undefined || object.improvedResume !== undefined
+}
+
+function tryParseJson(text: string): unknown {
+  try {
+    return JSON.parse(text) as unknown
+  } catch {
+    return text
+  }
+}
+
+function unwrapN8nPayload(input: unknown, depth = 0): unknown {
+  if (depth > 6) {
+    return input
+  }
+
+  if (typeof input === "string") {
+    const parsed = tryParseJson(input)
+    if (parsed === input) {
+      return input
+    }
+    return unwrapN8nPayload(parsed, depth + 1)
+  }
+
   if (Array.isArray(input)) {
-    return input[0] ?? {}
+    return unwrapN8nPayload(input[0] ?? {}, depth + 1)
   }
 
   const root = asObject(input)
@@ -25,14 +59,24 @@ function unwrapN8nPayload(input: unknown): unknown {
     return input
   }
 
-  if (root.originalScore !== undefined || root.improvedResume !== undefined) {
+  if (hasJobMatchShape(root)) {
     return root
   }
 
-  if (root.body !== undefined) return root.body
-  if (root.data !== undefined) return root.data
-  if (root.result !== undefined) return root.result
-  if (root.output !== undefined) return root.output
+  const response = asObject(root.response)
+  if (Object.keys(response).length > 0) {
+    if (hasJobMatchShape(response)) return response
+    if (response.output !== undefined) return unwrapN8nPayload(response.output, depth + 1)
+    if (response.result !== undefined) return unwrapN8nPayload(response.result, depth + 1)
+    if (response.data !== undefined) return unwrapN8nPayload(response.data, depth + 1)
+    if (response.body !== undefined) return unwrapN8nPayload(response.body, depth + 1)
+  }
+
+  if (root.body !== undefined) return unwrapN8nPayload(root.body, depth + 1)
+  if (root.data !== undefined) return unwrapN8nPayload(root.data, depth + 1)
+  if (root.result !== undefined) return unwrapN8nPayload(root.result, depth + 1)
+  if (root.output !== undefined) return unwrapN8nPayload(root.output, depth + 1)
+  if (root.json !== undefined) return unwrapN8nPayload(root.json, depth + 1)
 
   return root
 }
@@ -90,7 +134,12 @@ export async function tryEvaluateJobMatchWithN8n(input: {
       source: "job-match-api",
     })
     const normalized = unwrapN8nPayload(raw)
-    return normalizeJobMatchResult(normalized, input.resumeData)
+    try {
+      return normalizeJobMatchResult(normalized, input.resumeData)
+    } catch (error) {
+      console.warn("job-match-n8n-invalid-payload", safeSnippet(normalized))
+      throw error
+    }
   } catch (error) {
     console.warn("job-match-n8n-fallback", summarizeError(error))
     return null

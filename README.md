@@ -44,7 +44,7 @@ N8N_JOB_MATCH_WEBHOOK_URL=
 # Optional shared secret sent as x-workflow-secret.
 N8N_WEBHOOK_SECRET=
 # Optional timeout for n8n webhook calls in milliseconds.
-N8N_WEBHOOK_TIMEOUT_MS=15000
+N8N_WEBHOOK_TIMEOUT_MS=120000
 ```
 
 ## Run

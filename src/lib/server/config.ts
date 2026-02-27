@@ -1,7 +1,7 @@
 const DEFAULT_APP_NAME = "resume-portfolio-app"
 const DEFAULT_GEMINI_MODEL = "gemini-1.5-flash"
 const DEFAULT_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-const DEFAULT_N8N_TIMEOUT_MS = 15000
+const DEFAULT_N8N_TIMEOUT_MS = 120000
 
 function firstNonEmpty(...values: Array<string | undefined>): string | undefined {
   for (const value of values) {

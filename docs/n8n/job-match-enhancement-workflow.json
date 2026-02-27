@@ -1,60 +1,392 @@
 {
-  "name": "Job Match + Resume Enhancement (Gemini)",
+  "name": "Automated Job Application Resume Linear Workflow",
   "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=This is the Job Description:\n{{ $json.jobDescription }}\n\nThis is the base_resume:\n{{ JSON.stringify($json.base_resume || {}) }}\n\nThis is the Resume GuideLines:\n{{ JSON.stringify($json.resume_guidelines || {}) }}\n\nOptimize this resume for the JD above and return the final structured output.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an Expert AI Resume Strategist.\n\nYour mission is to optimize the resume for the given job description by evaluating and rewriting it without inventing facts.\n\nMANDATORY EXECUTION FLOW\n1) ALWAYS call Resume Evaluator first with job_description and base_resume.\n2) Call Resume Rewriter next with evaluator outputs plus base_resume and job_description.\n3) Replace base_resume with rewritten output.\n4) Call Resume Evaluator again on rewritten resume to obtain improved score.\n5) Return final structured JSON matching the output parser schema exactly.\n\nSTRICT RULES\n- Never invent jobs, education, links, or skills.\n- Only rephrase, reorder, and emphasize existing content.\n- Tool usage is required.\n- Final response must be valid JSON object (not markdown, not string).\n- Ensure all required resume keys exist; use empty strings/arrays if unknown."
+        }
+      },
+      "id": "5ef07d80-d499-410f-b52d-9a3cb7ed1a63",
+      "name": "Resume & Cover Letter AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3936,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"originalScore\": 62,\n  \"improvedScore\": 81,\n  \"analysis\": \"Score increased by aligning resume language and emphasis to job requirements while preserving truthfulness.\",\n  \"improvedResume\": {\n    \"personal\": {\n      \"name\": \"\",\n      \"title\": \"\",\n      \"summary\": \"\",\n      \"photo\": \"\",\n      \"primaryPhoto\": \"\",\n      \"secondaryPhoto\": \"\"\n    },\n    \"contact\": {\n      \"email\": \"\",\n      \"phone\": \"\",\n      \"location\": \"\"\n    },\n    \"links\": {\n      \"github\": \"\",\n      \"linkedin\": \"\",\n      \"twitter\": \"\",\n      \"portfolio\": \"\"\n    },\n    \"experience\": [\n      {\n        \"company\": \"\",\n        \"role\": \"\",\n        \"startDate\": \"\",\n        \"endDate\": \"\",\n        \"description\": \"\"\n      }\n    ],\n    \"projects\": [\n      {\n        \"name\": \"\",\n        \"description\": \"\",\n        \"tech\": [\"\"],\n        \"link\": \"\"\n      }\n    ],\n    \"skills\": [\"\"],\n    \"education\": [\"\"]\n  }\n}",
+        "autoFix": true
+      },
+      "id": "61ac6136-7e35-462b-9b85-0c8ec685940e",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        4256,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ ({\n  jobDescription: $('Prepare Payload').item.json.jobDescription || '',\n  base_resume: $('Prepare Payload').item.json.base_resume || {},\n  resume_guidelines: $json.output || $json.resume_guidelines || '',\n  source: $('Prepare Payload').item.json.source || ''\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3520,
+        352
+      ],
+      "id": "261684d5-8c69-42c8-9f16-fbc8313c79c2",
+      "name": "Normalize Request"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=3"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        3872,
+        576
+      ],
+      "id": "eeabc795-2b41-4cd1-8cf5-aa75ccd4fffc",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "gdLijedBkzCMWgtC",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/gdLijedBkzCMWgtC",
+          "cachedResultName": "Tool — Resume Rewriter"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "query"
+          ],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        4000,
+        576
+      ],
+      "id": "ef2264cc-4b78-4204-8652-2485598ae1ba",
+      "name": "Resume Rewriter"
+    },
+    {
+      "parameters": {
+        "description": "",
+        "workflowId": {
+          "__rl": true,
+          "value": "hmEaJaGCu9sLtdbS",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/hmEaJaGCu9sLtdbS",
+          "cachedResultName": "Tool — Resume Evaluator"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "query"
+          ],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        4128,
+        576
+      ],
+      "id": "b956d082-a957-413d-bac2-655ef2697be4",
+      "name": "Resume Evaluator"
+    },
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "job-match-enhancement",
         "responseMode": "lastNode",
-        "responseData": "firstEntryJson",
-        "options": {}
+        "options": {
+          "responseContentType": "application/json"
+        }
       },
-      "id": "6b8b6b95-9324-4f95-a25d-970c65c0268a",
-      "name": "Webhook Job Match",
+      "id": "285680c4-d874-42da-b24a-99c61f359ff7",
+      "name": "Webhook Job Match1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        260,
-        300
-      ]
+        2720,
+        352
+      ],
+      "webhookId": "20f63cee-5812-4da3-a197-67a5d258a1c7"
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const incoming = $input.first()?.json ?? {};\nconst body = incoming && typeof incoming.body === \"object\" && incoming.body !== null && !Array.isArray(incoming.body) ? incoming.body : incoming;\nconst headers = incoming && typeof incoming.headers === \"object\" && incoming.headers !== null && !Array.isArray(incoming.headers) ? incoming.headers : {};\n\nconst expectedSecret = $env.N8N_WEBHOOK_SECRET || \"\";\nif (expectedSecret) {\n  const providedSecret = String(headers[\"x-workflow-secret\"] ?? headers[\"X-Workflow-Secret\"] ?? \"\").trim();\n  if (providedSecret !== expectedSecret) {\n    throw new Error(\"Unauthorized request: invalid x-workflow-secret header.\");\n  }\n}\n\nfunction asObject(value) {\n  if (!value || typeof value !== \"object\" || Array.isArray(value)) return {};\n  return value;\n}\n\nfunction toText(value) {\n  if (typeof value === \"string\") return value.trim();\n  if (typeof value === \"number\" || typeof value === \"boolean\") return String(value);\n  return \"\";\n}\n\nfunction toArray(value) {\n  if (Array.isArray(value)) return value.map((item) => toText(item)).filter(Boolean);\n  return [];\n}\n\nfunction clampScore(value) {\n  const numeric = Number.isFinite(value) ? value : 0;\n  const rounded = Math.round(numeric * 10) / 10;\n  return Math.max(0, Math.min(100, rounded));\n}\n\nfunction extractJsonPayload(text) {\n  const fencedJson = text.match(/```json\\\\s*(\\\\{[\\\\s\\\\S]*?\\\\})\\\\s*```/i);\n  const fenced = text.match(/```\\\\s*(\\\\{[\\\\s\\\\S]*?\\\\})\\\\s*```/);\n  const loose = text.match(/(\\\\{[\\\\s\\\\S]*\\\\})/);\n  const candidate = (fencedJson && fencedJson[1]) || (fenced && fenced[1]) || (loose && loose[1]);\n  if (!candidate) {\n    throw new Error(\"No JSON object found in Gemini output.\");\n  }\n  return JSON.parse(candidate);\n}\n\nfunction buildGeminiUrl(configuredBaseUrl, model) {\n  const trimmed = String(configuredBaseUrl || \"\").replace(/\\/$/, \"\");\n  if (!trimmed) {\n    return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;\n  }\n  if (trimmed.includes(\"{model}\")) {\n    return trimmed.replace(\"{model}\", model);\n  }\n  if (trimmed.includes(\":generateContent\")) {\n    return trimmed;\n  }\n  if (trimmed.endsWith(\"/models\")) {\n    return `${trimmed}/${model}:generateContent`;\n  }\n  return `${trimmed}/${model}:generateContent`;\n}\n\nconst requestBody = asObject(body);\nconst resumeData = asObject(requestBody.resumeData);\nconst jobDescription = toText(requestBody.jobDescription);\nif (!Object.keys(resumeData).length) {\n  throw new Error(\"resumeData is required.\");\n}\nif (!jobDescription) {\n  throw new Error(\"jobDescription is required.\");\n}\n\nconst apiKey = ($env.LLM_API_KEY || $env.GEMINI_API_KEY || $env.GOOGLE_API_KEY || \"\").trim();\nif (!apiKey) {\n  throw new Error(\"Set LLM_API_KEY (or GEMINI_API_KEY / GOOGLE_API_KEY) in n8n environment.\");\n}\n\nconst model = ($env.LLM_MODEL || \"gemini-1.5-flash\").trim();\nconst baseUrl = ($env.LLM_API_URL || \"https://generativelanguage.googleapis.com/v1beta/models\").trim();\nconst geminiUrl = buildGeminiUrl(baseUrl, model);\n\nconst prompt = [\n  \"You are an expert resume strategist and ATS evaluator.\",\n  \"Evaluate job fit and regenerate a stronger resume while staying truthful.\",\n  \"Return only valid JSON object with keys: originalScore, improvedScore, analysis, improvedResume.\",\n  \"improvedResume must include: personal, contact, links, experience, projects, skills, education.\",\n  \"Scores must be 0..100 and improvedScore >= originalScore.\",\n  \"Do not invent contact details or links.\",\n  \"Keep analysis concise.\",\n  \"\",\n  `Job description:\\n${jobDescription}`,\n  \"\",\n  `Current resume JSON:\\n${JSON.stringify(resumeData)}`\n].join(\"\\n\");\n\nconst response = await fetch(`${geminiUrl}?key=${encodeURIComponent(apiKey)}`, {\n  method: \"POST\",\n  headers: { \"Content-Type\": \"application/json\" },\n  body: JSON.stringify({\n    contents: [{ parts: [{ text: prompt }] }],\n    generationConfig: {\n      temperature: 0,\n      maxOutputTokens: 4096,\n      responseMimeType: \"application/json\"\n    }\n  })\n});\n\nif (!response.ok) {\n  const detail = await response.text();\n  throw new Error(`Gemini call failed (${response.status}): ${detail}`);\n}\n\nconst geminiPayload = await response.json();\nconst parts = geminiPayload?.candidates?.[0]?.content?.parts ?? [];\nconst llmText = Array.isArray(parts) ? parts.map((part) => part?.text || \"\").join(\"\\n\").trim() : \"\";\nif (!llmText) {\n  throw new Error(\"Gemini returned empty content.\");\n}\n\nconst parsed = extractJsonPayload(llmText);\nconst improvedResumeRaw = asObject(parsed.improvedResume);\n\nconst srcPersonal = asObject(resumeData.personal);\nconst srcContact = asObject(resumeData.contact);\nconst srcLinks = asObject(resumeData.links);\n\nconst improvedPersonal = asObject(improvedResumeRaw.personal);\nconst improvedContact = asObject(improvedResumeRaw.contact);\nconst improvedLinks = asObject(improvedResumeRaw.links);\n\nconst improvedResume = {\n  personal: {\n    name: toText(srcPersonal.name) || toText(improvedPersonal.name),\n    title: toText(improvedPersonal.title),\n    summary: toText(improvedPersonal.summary),\n    photo: toText(srcPersonal.photo),\n    primaryPhoto: toText(srcPersonal.primaryPhoto),\n    secondaryPhoto: toText(srcPersonal.secondaryPhoto)\n  },\n  contact: {\n    email: toText(srcContact.email),\n    phone: toText(srcContact.phone),\n    location: toText(srcContact.location)\n  },\n  links: {\n    github: toText(srcLinks.github),\n    linkedin: toText(srcLinks.linkedin),\n    twitter: toText(srcLinks.twitter),\n    portfolio: toText(srcLinks.portfolio)\n  },\n  experience: Array.isArray(improvedResumeRaw.experience)\n    ? improvedResumeRaw.experience.map((entry) => {\n        const item = asObject(entry);\n        return {\n          company: toText(item.company),\n          role: toText(item.role),\n          startDate: toText(item.startDate),\n          endDate: toText(item.endDate),\n          description: toText(item.description)\n        };\n      })\n    : [],\n  projects: Array.isArray(improvedResumeRaw.projects)\n    ? improvedResumeRaw.projects.map((entry) => {\n        const item = asObject(entry);\n        return {\n          name: toText(item.name),\n          description: toText(item.description),\n          tech: toArray(item.tech),\n          link: toText(item.link)\n        };\n      })\n    : [],\n  skills: toArray(improvedResumeRaw.skills),\n  education: toArray(improvedResumeRaw.education)\n};\n\nconst originalScore = clampScore(Number(parsed.originalScore));\nconst improvedScore = clampScore(Math.max(Number(parsed.improvedScore), originalScore));\nconst analysis = toText(parsed.analysis);\n\nreturn [\n  {\n    json: {\n      originalScore,\n      improvedScore,\n      improvedResume,\n      analysis\n    }\n  }\n];"
+        "options": {}
       },
-      "id": "f3f9be16-bb2f-475b-b3f5-8f93c213d73c",
-      "name": "AI Job Match + Enhancement",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
       "position": [
-        600,
-        300
-      ]
+        3744,
+        576
+      ],
+      "id": "0521ad90-b4ef-4593-ab8c-3bf543c2617a",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Pql3aHa2Sd4cXo5N",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ ({\n  jobDescription: $json.body?.jobDescription || $json.jobDescription || '',\n  base_resume: $json.body?.resumeData || $json.resumeData || {},\n  source: $json.body?.source || $json.source || ''\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2832,
+        352
+      ],
+      "id": "af6588b1-6b58-4264-a1c4-58056f7cde26",
+      "name": "Prepare Payload"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "D6wtOJ5nb0ysAxWf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/D6wtOJ5nb0ysAxWf",
+          "cachedResultName": "Resume Guidelines"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "prompt": "={{ $json.jobDescription || 'Provide resume optimization guidelines for this job description.' }}"
+          },
+          "matchingColumns": [
+            "prompt"
+          ],
+          "schema": [
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2944,
+        352
+      ],
+      "id": "fba962ff-6616-41fb-9ca6-056576c8899d",
+      "name": "Call 'Resume Guidelines'"
     }
   ],
+  "pinData": {},
   "connections": {
-    "Webhook Job Match": {
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Resume & Cover Letter AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Request": {
       "main": [
         [
           {
-            "node": "AI Job Match + Enhancement",
+            "node": "Resume & Cover Letter AI Agent",
             "type": "main",
             "index": 0
           }
         ]
       ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Resume & Cover Letter AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Rewriter": {
+      "ai_tool": [
+        [
+          {
+            "node": "Resume & Cover Letter AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Evaluator": {
+      "ai_tool": [
+        [
+          {
+            "node": "Resume & Cover Letter AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Job Match1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Resume & Cover Letter AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Resume Guidelines'": {
+      "main": [
+        [
+          {
+            "node": "Normalize Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Payload": {
+      "main": [
+        [
+          {
+            "node": "Call 'Resume Guidelines'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume & Cover Letter AI Agent": {
+      "main": [
+        []
+      ]
     }
   },
-  "pinData": {},
-  "active": false,
+  "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "20366046-34bf-4a98-a17c-f2949448b7c5",
+  "versionId": "ae3a8057-20ed-4876-9f15-2758818e9be8",
   "meta": {
-    "templateCredsSetupCompleted": false
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b339624b2e573f6e02169b701af11284cb8fa417740e440cd3512bdd7c577677"
   },
-  "id": "aCrmZ5rNce2Skf9f",
-  "tags": []
+  "id": "oRqblBPbWSHc3N3Y",
+  "tags": [
+    {
+      "updatedAt": "2026-02-10T12:38:43.016Z",
+      "createdAt": "2026-02-10T12:38:43.016Z",
+      "id": "4bU1xCrcuAXDUqyT",
+      "name": "Automation"
+    },
+    {
+      "updatedAt": "2026-02-10T12:38:43.024Z",
+      "createdAt": "2026-02-10T12:38:43.024Z",
+      "id": "l59rdjoSR90iAuwf",
+      "name": "AI Agent"
+    },
+    {
+      "updatedAt": "2026-02-10T12:38:43.030Z",
+      "createdAt": "2026-02-10T12:38:43.030Z",
+      "id": "oNbbH5c93dd0Ngs8",
+      "name": "Job Application"
+    }
+  ]
 }
